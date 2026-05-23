@@ -1,0 +1,47 @@
+<div class="app-container">
+  <!-- Collapsible Sidebar -->
+  <aside class="main-sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">🍽️</span>
+      <span class="logo-text">SFR POS</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a routerLink="/billing" routerLinkActive="active" class="nav-link">
+        <span class="nav-icon">💵</span>
+        <span class="nav-text">Billing (POS)</span>
+      </a>
+      <a routerLink="/categories" routerLinkActive="active" class="nav-link">
+        <span class="nav-icon">📁</span>
+        <span class="nav-text">Categories</span>
+      </a>
+      <a routerLink="/menu-items" routerLinkActive="active" class="nav-link">
+        <span class="nav-icon">🍕</span>
+        <span class="nav-text">Menu Items</span>
+      </a>
+      <a routerLink="/gst" routerLinkActive="active" class="nav-link">
+        <span class="nav-icon">📊</span>
+        <span class="nav-text">GST Rates</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <span class="user-avatar">👤</span>
+        <div class="user-details">
+          <span class="user-name">{{ getUserName() }}</span>
+          <span class="user-role">{{ api.currentUser()?.role || 'Staff' }}</span>
+        </div>
+      </div>
+      <button (click)="handleLogout()" class="logout-btn">
+        <span class="logout-icon">🚪</span>
+        <span class="logout-text">Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Panel -->
+  <main class="main-content">
+    <ng-content></ng-content>
+  </main>
+</div>

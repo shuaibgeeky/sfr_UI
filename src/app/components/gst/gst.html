@@ -1,0 +1,90 @@
+<app-layout>
+  <div class="page-header">
+    <h1>GST Tax Management</h1>
+    <p>Set up and configure GST categories for menu items</p>
+  </div>
+
+  <div class="grid-container">
+    <!-- Add GST Rate Form -->
+    <div class="glass-panel form-card">
+      <h3>Add New GST Rate</h3>
+      
+      <form (submit)="handleAddGst($event)">
+        <div class="form-group">
+          <label class="form-label">GST Category Name</label>
+          <input 
+            type="text" 
+            name="gstName" 
+            [(ngModel)]="gstName" 
+            class="input-control" 
+            placeholder="e.g. GST 5% or GST 18%" 
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Percentage (%)</label>
+          <input 
+            type="number" 
+            name="percentage" 
+            [(ngModel)]="percentage" 
+            class="input-control" 
+            placeholder="e.g. 5" 
+            min="0" 
+            max="100" 
+            required
+          />
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full" [disabled]="isLoading()">
+          {{ isLoading() ? 'Saving...' : 'Add GST Rate' }}
+        </button>
+      </form>
+    </div>
+
+    <!-- GST Rates List -->
+    <div class="glass-panel list-card">
+      <h3>Active GST Categories</h3>
+      
+      <div class="table-container mt-20">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Category Name</th>
+              <th>Total GST</th>
+              <th>CGST (Split)</th>
+              <th>SGST (Split)</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (rate of gstRates(); track rate._id) {
+              <tr>
+                <td class="bold">{{ rate.gstName }}</td>
+                <td>{{ rate.percentage }}%</td>
+                <td>{{ rate.cgstPercentage }}%</td>
+                <td>{{ rate.sgstPercentage }}%</td>
+                <td>
+                  <span class="badge" [class.badge-veg]="rate.status" [class.badge-nonveg]="!rate.status">
+                    {{ rate.status ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="center-text py-20 text-muted">No GST rates configured yet.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Alert -->
+  @if (toastMessage()) {
+    <div class="alert-toast" [class.alert-toast-success]="toastType() === 'success'" [class.alert-toast-danger]="toastType() === 'danger'">
+      <span>{{ toastMessage() }}</span>
+    </div>
+  }
+</app-layout>

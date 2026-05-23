@@ -1,0 +1,44 @@
+<div class="login-wrapper">
+  <div class="glass-panel login-card">
+    <div class="login-header">
+      <h2>SFR RESTAURANT</h2>
+      <p>Login to your POS terminal</p>
+    </div>
+
+    @if (errorMessage()) {
+      <div class="login-error">
+        {{ errorMessage() }}
+      </div>
+    }
+
+    <form (submit)="handleLogin($event)">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input 
+          type="text" 
+          name="username" 
+          [(ngModel)]="username" 
+          class="input-control" 
+          placeholder="Enter your username" 
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input 
+          type="password" 
+          name="password" 
+          [(ngModel)]="password" 
+          class="input-control" 
+          placeholder="••••••••" 
+          required
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary w-full" [disabled]="isLoading()">
+        {{ isLoading() ? 'Logging in...' : 'Sign In' }}
+      </button>
+    </form>
+  </div>
+</div>

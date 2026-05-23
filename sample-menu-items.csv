@@ -1,0 +1,21 @@
+item_name,category,itemType,description,selling_price,mrp,gstRate,isGSTincluded
+Masala Dosa,Breakfast,veg,Crispy dosa with spicy potato filling,180,200,5%,true
+Butter Chicken,Main Course,non-veg,Tender chicken in creamy tomato sauce,320,380,,true
+Paneer Tikka,Starters,veg,Grilled paneer with Indian spices,240,280,,true
+Chicken Biryani,Main Course,non-veg,Fragrant rice with tender chicken,280,350,5%,true
+Samosa (2pcs),Starters,veg,Crispy pastry with potato and peas filling,40,50,,true
+Spring Rolls (3pcs),Starters,veg,Fried rolls with vegetable filling,60,80,,true
+Garlic Naan,Bread,veg,Soft bread with garlic and butter,80,100,,true
+Plain Paratha,Bread,veg,Layered Indian flatbread,70,90,,true
+Tandoori Chicken,Main Course,non-veg,Grilled chicken with tandoori spices,350,420,,true
+Palak Paneer,Main Course,veg,Cottage cheese in spinach gravy,240,300,,true
+Chole Bhature,Main Course,veg,Deep fried bread with chickpea curry,150,180,,true
+Fish Curry,Main Course,non-veg,Fish in traditional curry sauce,280,350,,true
+Vegetable Pulao,Rice,veg,Basmati rice with mixed vegetables,120,150,,true
+Mutton Keema,Main Course,non-veg,Ground mutton with traditional spices,320,400,,true
+Lassi,Beverages,veg,Traditional yogurt-based drink,60,80,,true
+Fresh Lemon Juice,Beverages,veg,Freshly squeezed lemon juice,50,70,,true
+Gulab Jamun (2pcs),Desserts,veg,Soft fried dumpling in sugar syrup,80,100,,true
+Kheer,Desserts,veg,Rice pudding with dry fruits,100,130,,true
+Mango Lassi,Beverages,veg,Mango flavored yogurt drink,80,100,,true
+Raita,Sides,veg,Yogurt with cucumber and spices,40,60,,true

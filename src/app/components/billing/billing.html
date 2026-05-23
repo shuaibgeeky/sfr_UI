@@ -1,0 +1,294 @@
+<app-layout>
+  <div class="pos-layout">
+    
+    <!-- Left Side: Menu Item Selection -->
+    <div class="menu-section">
+      <div class="pos-header">
+        <div class="title-search">
+          <h2>Billing Terminal (POS)</h2>
+          <input 
+            type="text" 
+            [(ngModel)]="searchQuery" 
+            class="input-control search-bar" 
+            placeholder="🔍 Search dishes, drinks..." 
+          />
+        </div>
+        
+        <!-- Category Tabs -->
+        <div class="category-tabs">
+          <button 
+            (click)="selectedCategory.set('all')" 
+            class="tab-btn" 
+            [class.active]="selectedCategory() === 'all'"
+          >
+            All Items
+          </button>
+          @for (cat of categories(); track cat._id) {
+            <button 
+              (click)="selectedCategory.set(cat._id)" 
+              class="tab-btn" 
+              [class.active]="selectedCategory() === cat._id"
+            >
+              {{ cat.cate_name }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Items Grid -->
+      <div class="items-grid">
+        @for (item of filteredItems(); track item._id) {
+          <div 
+            (click)="addToCart(item)" 
+            class="glass-panel item-card" 
+            [class.veg-border]="item.itemType === 'veg'" 
+            [class.nonveg-border]="item.itemType !== 'veg'"
+          >
+            <div class="item-type-badge">
+              <span class="type-dot" [class.veg-dot]="item.itemType === 'veg'" [class.nonveg-dot]="item.itemType !== 'veg'"></span>
+              <span class="type-text">{{ item.itemType === 'veg' ? 'Veg' : 'Non-veg' }}</span>
+            </div>
+            <h4 class="item-title">{{ item.item_name }}</h4>
+            <p class="item-desc">{{ item.description || 'Tasty and fresh dish' }}</p>
+            <div class="item-footer">
+              <span class="item-price">Rs {{ item.selling_price }}</span>
+              <button class="add-btn">+</button>
+            </div>
+          </div>
+        } @empty {
+          <div class="center-text py-40 text-muted full-width">No menu items found. Add items in the Menu portal first.</div>
+        }
+      </div>
+    </div>
+
+    <!-- Right Side: Cart Panel (Collapsible Drawer on Mobile) -->
+    <div class="cart-section" [class.mobile-open]="isCartOpen()">
+      <div class="cart-header">
+        <h3>Current Order</h3>
+        <button class="close-cart-btn" (click)="isCartOpen.set(false)">✖ Close</button>
+        <button (click)="clearCart()" class="clear-btn">Clear Cart</button>
+      </div>
+
+      <!-- Cart Items Scroll Area -->
+      <div class="cart-items">
+        @for (item of cart(); track item._id) {
+          <div class="cart-item-row">
+            <div class="item-info">
+              <span class="item-name bold">{{ item.item_name }}</span>
+              <span class="item-price-unit">Rs {{ item.selling_price }}</span>
+            </div>
+            <div class="item-actions">
+              <button (click)="decrementQty(item)" class="qty-btn">-</button>
+              <span class="qty-count">{{ item.quantity }}</span>
+              <button (click)="addToCart(item)" class="qty-btn">+</button>
+              <button (click)="removeFromCart(item)" class="delete-btn">🗑️</button>
+            </div>
+          </div>
+        } @empty {
+          <div class="cart-empty-state">
+            <span class="cart-icon">🛒</span>
+            <p>Cart is empty. Click dishes to add them!</p>
+          </div>
+        }
+      </div>
+
+      <!-- Invoice Details / Customer Inputs -->
+      <div class="cart-meta glass-panel">
+          @if (isEditingSavedBill()) {
+            <div class="edit-badge">Editing saved bill</div>
+          }
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label">Table Number</label>
+              <input type="text" [(ngModel)]="tableNumber" class="input-control font-sm" placeholder="e.g. Table 5" />
+            </div>
+            <div class="form-group flex-1">
+              <label class="form-label">Discount (Rs)</label>
+              <input type="number" [(ngModel)]="discount" class="input-control font-sm" placeholder="0" min="0" />
+            </div>
+          </div>
+        
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="form-label">Customer Name</label>
+            <input type="text" [(ngModel)]="customerName" class="input-control font-sm" placeholder="Guest" />
+          </div>
+          <div class="form-group flex-1">
+            <label class="form-label">Mobile Number</label>
+            <input type="text" [(ngModel)]="customerMobile" class="input-control font-sm" placeholder="Optional" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="form-label">Payment Mode</label>
+            <select [(ngModel)]="paymentMode" class="input-control font-sm">
+              <option value="upi">UPI / Scanner</option>
+              <option value="cash">Cash</option>
+              <option value="card">Card</option>
+              <option value="unpaid">Unpaid</option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label class="form-label">Status</label>
+            <select [(ngModel)]="status" class="input-control font-sm">
+              <option value="paid">Paid ✅</option>
+              <option value="pending">Pending ⏳</option>
+              <option value="cancelled">Cancelled ❌</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Calculation Details Panel -->
+      <div class="cart-summary">
+        <div class="summary-row">
+          <span>Subtotal:</span>
+          <span>Rs {{ calculatedSubTotal() }}</span>
+        </div>
+        @if (calculatedGst() > 0) {
+          <div class="summary-row font-sm text-muted">
+            <span>CGST (2.5%):</span>
+            <span>Rs {{ calculatedCgst() }}</span>
+          </div>
+          <div class="summary-row font-sm text-muted">
+            <span>SGST (2.5%):</span>
+            <span>Rs {{ calculatedSgst() }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Total GST (5%):</span>
+            <span>Rs {{ calculatedGst() }}</span>
+          </div>
+        }
+        @if (discount > 0) {
+          <div class="summary-row text-danger">
+            <span>Discount:</span>
+            <span>-Rs {{ discount }}</span>
+          </div>
+        }
+        <div class="summary-row grand-total bold text-cyan">
+          <span>Grand Total:</span>
+          <span>Rs {{ calculatedGrandTotal() }}</span>
+        </div>
+
+        <button 
+          (click)="handlePlaceOrder()" 
+          class="btn btn-primary place-order-btn" 
+          [disabled]="cart().length === 0 || !tableNumber || isLoading()"
+        >
+          {{ isLoading() ? 'Generating Bill...' : '⚡ Generate & Print Bill' }}
+        </button>
+        <button 
+          (click)="saveCurrentBill()" 
+          class="btn btn-secondary place-order-btn"
+          [disabled]="cart().length === 0 || isLoading()"
+          style="margin-top: 8px;"
+        >
+          {{ editingBillId() ? 'Update Saved Bill' : '💾 Save Bill to Cart' }}
+        </button>
+        @if (editingBillId()) {
+          <button 
+            (click)="cancelPendingBillEdit()" 
+            class="btn btn-link place-order-btn"
+            style="margin-top: 8px;"
+          >
+            Cancel Edit
+          </button>
+        }
+      </div>
+
+      <div class="pending-bills glass-panel" style="margin-top: 20px;">
+        <div class="pending-bills-header">
+          <h4>Saved Bills</h4>
+          <span class="font-sm text-muted">{{ pendingBillCount() }} saved</span>
+        </div>
+
+        @if (pendingBills().length > 0) {
+          @for (bill of pendingBills(); track bill.id) {
+            <div class="pending-bill-card">
+              <div class="pending-bill-row">
+                <div>
+                  <div class="pending-bill-label">Table</div>
+                  <div>{{ bill.tableNumber || 'N/A' }}</div>
+                </div>
+                <div>
+                  <div class="pending-bill-label">Items</div>
+                  <div>{{ bill.items.length }}</div>
+                </div>
+                <div>
+                  <div class="pending-bill-label">Total</div>
+                  <div>Rs {{ getPendingBillTotal(bill) }}</div>
+                </div>
+              </div>
+              <div class="pending-bill-row pending-bill-meta">
+                <span>{{ bill.customerName || 'Guest' }}</span>
+                <span>{{ formatPendingBillDate(bill.createdAt) }}</span>
+              </div>
+              <div class="pending-bill-actions">
+                <button class="btn btn-primary" (click)="loadPendingBill(bill)" [disabled]="isLoading()">Edit</button>
+                <button class="btn btn-primary" (click)="generateSavedBill(bill)" [disabled]="isLoading()">Generate Bill</button>
+                <button class="btn btn-secondary" (click)="removePendingBill(bill.id)">Remove</button>
+              </div>
+            </div>
+          }
+        } @else {
+          <div class="center-text py-20 text-muted">No saved bills yet. Use "Save Bill to Cart" to store this bill.</div>
+        }
+      </div>
+    </div>
+
+    <!-- Floating Cart Bar for Mobile View -->
+    <div (click)="isCartOpen.set(true)" class="mobile-cart-bar">
+      <div class="mobile-cart-left">
+        <span>🛒 {{ cartItemCount() }} items</span>
+        <span class="divider-dot"></span>
+        <span class="bold">Rs {{ calculatedGrandTotal() }}</span>
+      </div>
+      <span class="bold">View Cart ➡️</span>
+    </div>
+  </div>
+
+  <!-- Receipt Print Modal -->
+  @if (activeBillReceipt()) {
+    <div class="modal-backdrop">
+      <div class="glass-panel modal-content">
+        <div class="modal-header">
+          <h3>Bill Invoice Print</h3>
+          <button (click)="closeModal()" class="close-btn">✖</button>
+        </div>
+        
+        <!-- Dual Receipt Preview (Thermal text & HTML) -->
+        <div class="receipt-tabs">
+          <button (click)="previewMode.set('html')" class="preview-tab" [class.active]="previewMode() === 'html'">HTML Receipt</button>
+          <button (click)="previewMode.set('text')" class="preview-tab" [class.active]="previewMode() === 'text'">58mm POS Receipt (Thermal)</button>
+        </div>
+
+        <div class="receipt-preview-container">
+          @if (previewMode() === 'text') {
+            <pre class="text-receipt-preview">{{ activeBillReceipt().rawText }}</pre>
+          } @else {
+            <div class="html-receipt-preview-wrapper">
+              <iframe 
+                #receiptFrame 
+                [srcdoc]="activeBillReceipt().htmlReceipt" 
+                class="html-receipt-iframe"
+              ></iframe>
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button (click)="triggerPrint()" class="btn btn-success flex-1">🖨️ Direct Print</button>
+          <button (click)="closeModal()" class="btn btn-secondary">Done</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Toast Alert -->
+  @if (toastMessage()) {
+    <div class="alert-toast" [class.alert-toast-success]="toastType() === 'success'" [class.alert-toast-danger]="toastType() === 'danger'">
+      <span>{{ toastMessage() }}</span>
+    </div>
+  }
+</app-layout>

@@ -118,6 +118,11 @@ body {
   transition: var(--transition-smooth);
   gap: 8px;
 }
+.btn-sm {
+  padding: 8px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+}
 .btn-primary {
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
   color: var(--color-text-dark);
@@ -153,6 +158,11 @@ body {
 }
 .btn:active {
   transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* Badges */

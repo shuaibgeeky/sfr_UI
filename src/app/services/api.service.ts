@@ -75,6 +75,18 @@ export class ApiService {
     );
   }
 
+  async updateCategory(categoryId: string, categoryData: any): Promise<any> {
+    return firstValueFrom(
+      this.http.put(`${this.apiUrl}/categories/${categoryId}`, categoryData, { headers: this.getHeaders() })
+    );
+  }
+
+  async deleteCategory(categoryId: string): Promise<any> {
+    return firstValueFrom(
+      this.http.delete(`${this.apiUrl}/categories/${categoryId}`, { headers: this.getHeaders() })
+    );
+  }
+
   // ================= MENU ITEMS =================
   async getMenuItems(): Promise<any[]> {
     const response: any = await firstValueFrom(
@@ -86,6 +98,24 @@ export class ApiService {
   async addMenuItem(menuItemData: any): Promise<any> {
     return firstValueFrom(
       this.http.post(`${this.apiUrl}/menu-items`, menuItemData, { headers: this.getHeaders() })
+    );
+  }
+
+  async updateMenuItem(menuItemId: string, menuItemData: any): Promise<any> {
+    return firstValueFrom(
+      this.http.put(`${this.apiUrl}/menu-items/${menuItemId}`, menuItemData, { headers: this.getHeaders() })
+    );
+  }
+
+  async deleteMenuItem(menuItemId: string): Promise<any> {
+    return firstValueFrom(
+      this.http.delete(`${this.apiUrl}/menu-items/${menuItemId}`, { headers: this.getHeaders() })
+    );
+  }
+
+  async addMenuItemsBulk(menuItemsData: any[]): Promise<any> {
+    return firstValueFrom(
+      this.http.post(`${this.apiUrl}/menu-items/bulk-upload`, { items: menuItemsData }, { headers: this.getHeaders() })
     );
   }
 

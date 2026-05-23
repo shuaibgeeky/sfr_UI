@@ -1,0 +1,300 @@
+<app-layout>
+  <div class="page-header">
+    <h1>Restaurant Menu Items</h1>
+    <p>Manage recipes, dishes, beverages, their pricing, and tax structures</p>
+  </div>
+
+  <div class="grid-container">
+    <!-- Add Menu Item Form -->
+    <div class="glass-panel form-card">
+      <!-- Mode Tabs -->
+      <div class="mode-tabs">
+        <button 
+          class="mode-tab" 
+          [class.active]="uploadMode() === 'single'"
+          (click)="uploadMode.set('single')"
+        >
+          Single Item
+        </button>
+        <button 
+          class="mode-tab" 
+          [class.active]="uploadMode() === 'bulk'"
+          (click)="uploadMode.set('bulk')"
+        >
+          Bulk Upload (CSV)
+        </button>
+      </div>
+
+      <ng-container *ngIf="uploadMode() === 'single'">
+        <h3>{{ editingId() ? 'Edit Menu Item' : 'Create Menu Item' }}</h3>
+        
+        <form (submit)="handleAddMenuItem($event)">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label">Category</label>
+              <select name="category" [(ngModel)]="category" class="input-control" required>
+                <option value="" disabled selected>Select Category</option>
+                <option *ngFor="let cat of categories()" [value]="cat._id">{{ cat.cate_name }}</option>
+              </select>
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label">Item Type</label>
+              <select name="itemType" [(ngModel)]="itemType" class="input-control">
+                <option value="veg">Veg 🌱</option>
+                <option value="non-veg">Non-Veg 🍗</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Item Name</label>
+            <input 
+              type="text" 
+              name="item_name" 
+              [(ngModel)]="item_name" 
+              class="input-control" 
+              placeholder="e.g. Masala Dosa, Butter Chicken" 
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Description (Optional)</label>
+            <input 
+              type="text" 
+              name="description" 
+              [(ngModel)]="description" 
+              class="input-control" 
+              placeholder="Briefly describe the item details..." 
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label">Selling Price (Rs)</label>
+              <input 
+                type="number" 
+                name="selling_price" 
+                [(ngModel)]="selling_price" 
+                class="input-control" 
+                placeholder="e.g. 180" 
+                required
+              />
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label">MRP (Rs)</label>
+              <input 
+                type="number" 
+                name="mrp" 
+                [(ngModel)]="mrp" 
+                class="input-control" 
+                placeholder="e.g. 200" 
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-row align-center">
+            <div class="form-group flex-1">
+              <label class="form-label">GST Tax Category</label>
+              <select name="gstRate" [(ngModel)]="gstRate" class="input-control">
+                <option value="">Default (Direct 5%)</option>
+                <option *ngFor="let rate of gstRates()" [value]="rate._id">{{ rate.gstName }} ({{ rate.percentage }}%)</option>
+              </select>
+            </div>
+
+            <div class="form-group flex-1 checkbox-group">
+              <label class="checkbox-container">
+                <input type="checkbox" name="isGSTincluded" [(ngModel)]="isGSTincluded" />
+                <span class="checkbox-text">GST Included in Price</span>
+              </label>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 12px;">
+            <button type="submit" class="btn btn-primary w-full" [disabled]="isLoading()">
+              {{ isLoading() ? (editingId() ? 'Updating...' : 'Saving...') : (editingId() ? 'Update Item' : 'Add Menu Item') }}
+            </button>
+            <button *ngIf="editingId()" type="button" class="btn btn-secondary w-full" (click)="cancelEditMenuItem()" [disabled]="isLoading()">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </ng-container>
+
+      <ng-container *ngIf="uploadMode() === 'bulk'">
+        <h3>Bulk Import Menu Items</h3>
+        
+        <div class="bulk-upload-section">
+          <div class="upload-info">
+            <p class="info-text">📋 Upload a CSV file to add multiple menu items at once.</p>
+            <button type="button" class="link-btn" (click)="downloadCsvTemplate()">
+              📥 Download CSV Template
+            </button>
+          </div>
+
+          <ng-container *ngIf="csvParsedItems().length === 0">
+            <div class="file-upload-area">
+              <input 
+                id="csvFileInput"
+                type="file" 
+                accept=".csv" 
+                (change)="handleCsvFileSelected($event)"
+                class="file-input"
+              />
+              <label for="csvFileInput" class="upload-label">
+                <span class="upload-icon">📁</span>
+                <span class="upload-text">Click to select CSV file or drag & drop</span>
+                <span class="upload-hint">(.csv format only)</span>
+              </label>
+            </div>
+          </ng-container>
+
+          <ng-container *ngIf="csvParsedItems().length > 0">
+            <div class="preview-section">
+              <div class="preview-header">
+                <h4>{{ csvParsedItems().length }} items ready to upload</h4>
+                <button type="button" class="btn btn-sm btn-secondary" (click)="cancelBulkUpload()">
+                  Clear & Upload Another
+                </button>
+              </div>
+
+              <div class="preview-table-container">
+                <table class="preview-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Item Name</th>
+                      <th>Category</th>
+                      <th>Type</th>
+                      <th>Price</th>
+                      <th>MRP</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of csvParsedItems(); index as i">
+                      <td>{{ i + 1 }}</td>
+                      <td>{{ item.item_name }}</td>
+                      <td>{{ item.category }}</td>
+                      <td>
+                        <span class="badge" [class.badge-veg]="item.itemType === 'veg'" [class.badge-nonveg]="item.itemType !== 'veg'">
+                          {{ item.itemType === 'veg' ? 'Veg' : 'Non-Veg' }}
+                        </span>
+                      </td>
+                      <td>Rs {{ item.selling_price }}</td>
+                      <td>Rs {{ item.mrp }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="upload-actions">
+                <button 
+                  type="button" 
+                  class="btn btn-primary" 
+                  (click)="handleBulkUpload()"
+                  [disabled]="isBulkUploading()"
+                >
+                  {{ isBulkUploading() ? 'Uploading...' : 'Confirm Upload' }}
+                </button>
+                <button 
+                  type="button" 
+                  class="btn btn-secondary" 
+                  (click)="cancelBulkUpload()"
+                  [disabled]="isBulkUploading()"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </ng-container>
+
+          <ng-container *ngIf="csvErrors().length > 0">
+            <div class="error-section">
+              <button 
+                type="button" 
+                class="error-header"
+                (click)="showBulkErrors.set(!showBulkErrors())"
+              >
+                <span class="error-icon">⚠️</span>
+                <span>{{ csvErrors().length }} validation error(s) found</span>
+                <span class="toggle-icon">{{ showBulkErrors() ? '▼' : '▶' }}</span>
+              </button>
+              
+              <div *ngIf="showBulkErrors()" class="error-list">
+                <div *ngFor="let error of csvErrors()" class="error-item">
+                  <strong>Row {{ error.row }}: {{ error.item }}</strong>
+                  <ul>
+                    <li *ngFor="let err of error.errors">{{ err }}</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="glass-panel list-card">
+      <h3>Menu Directory</h3>
+      
+      <div class="table-container mt-20">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Dish / Drink</th>
+              <th>Category</th>
+              <th>Type</th>
+              <th>Selling Price</th>
+              <th>MRP</th>
+              <th>Tax Mode</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of menuItems()">
+              <td>
+                <div class="item-cell">
+                  <span class="bold">{{ item.item_name }}</span>
+                  <span class="item-sub">{{ item.description || 'No desc' }}</span>
+                </div>
+              </td>
+              <td>{{ item.category?.cate_name || 'Unassigned' }}</td>
+              <td>
+                <span class="badge" [class.badge-veg]="item.itemType === 'veg'" [class.badge-nonveg]="item.itemType !== 'veg'">
+                  {{ item.itemType === 'veg' ? 'Veg' : 'Non-Veg' }}
+                </span>
+              </td>
+              <td class="bold text-cyan">Rs {{ item.selling_price }}</td>
+              <td class="text-muted text-through">Rs {{ item.mrp }}</td>
+              <td>
+                <span class="tax-badge" [class.tax-inc]="item.isGSTincluded !== false" [class.tax-exc]="item.isGSTincluded === false">
+                  {{ item.isGSTincluded !== false ? 'GST Inc' : 'GST Ext' }}
+                </span>
+              </td>
+              <td>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn btn-sm btn-secondary" (click)="startEditMenuItem(item)" [disabled]="isLoading()">
+                    ✏️ Edit
+                  </button>
+                  <button class="btn btn-sm btn-danger" (click)="handleDeleteMenuItem(item._id, item.item_name)" [disabled]="isLoading()">
+                    🗑️ Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="menuItems().length === 0">
+              <td colspan="7" class="center-text py-20 text-muted">No menu items configured yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="toastMessage()" class="alert-toast" [class.alert-toast-success]="toastType() === 'success'" [class.alert-toast-danger]="toastType() === 'danger'">
+    <span>{{ toastMessage() }}</span>
+  </div>
+</app-layout>

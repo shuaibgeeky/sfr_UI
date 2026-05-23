@@ -13,737 +13,24 @@ interface CartItem {
   category: any;
 }
 
+interface PendingBill {
+  id: string;
+  tableNumber: string;
+  discount: number;
+  customerName: string;
+  customerMobile: string;
+  paymentMode: string;
+  status: string;
+  items: CartItem[];
+  createdAt: string;
+}
+
 @Component({
   selector: 'app-billing',
   standalone: true,
   imports: [FormsModule, LayoutComponent],
-  template: `
-    <app-layout>
-      <div class="pos-layout">
-        
-        <!-- Left Side: Menu Item Selection -->
-        <div class="menu-section">
-          <div class="pos-header">
-            <div class="title-search">
-              <h2>Billing Terminal (POS)</h2>
-              <input 
-                type="text" 
-                [(ngModel)]="searchQuery" 
-                class="input-control search-bar" 
-                placeholder="🔍 Search dishes, drinks..." 
-              />
-            </div>
-            
-            <!-- Category Tabs -->
-            <div class="category-tabs">
-              <button 
-                (click)="selectedCategory.set('all')" 
-                class="tab-btn" 
-                [class.active]="selectedCategory() === 'all'"
-              >
-                All Items
-              </button>
-              @for (cat of categories(); track cat._id) {
-                <button 
-                  (click)="selectedCategory.set(cat._id)" 
-                  class="tab-btn" 
-                  [class.active]="selectedCategory() === cat._id"
-                >
-                  {{ cat.cate_name }}
-                </button>
-              }
-            </div>
-          </div>
-
-          <!-- Items Grid -->
-          <div class="items-grid">
-            @for (item of filteredItems(); track item._id) {
-              <div 
-                (click)="addToCart(item)" 
-                class="glass-panel item-card" 
-                [class.veg-border]="item.itemType === 'veg'" 
-                [class.nonveg-border]="item.itemType !== 'veg'"
-              >
-                <div class="item-type-badge">
-                  <span class="type-dot" [class.veg-dot]="item.itemType === 'veg'" [class.nonveg-dot]="item.itemType !== 'veg'"></span>
-                  <span class="type-text">{{ item.itemType === 'veg' ? 'Veg' : 'Non-veg' }}</span>
-                </div>
-                <h4 class="item-title">{{ item.item_name }}</h4>
-                <p class="item-desc">{{ item.description || 'Tasty and fresh dish' }}</p>
-                <div class="item-footer">
-                  <span class="item-price">Rs {{ item.selling_price }}</span>
-                  <button class="add-btn">+</button>
-                </div>
-              </div>
-            } @empty {
-              <div class="center-text py-40 text-muted full-width">No menu items found. Add items in the Menu portal first.</div>
-            }
-          </div>
-        </div>
-
-        <!-- Right Side: Cart Panel (Collapsible Drawer on Mobile) -->
-        <div class="cart-section" [class.mobile-open]="isCartOpen()">
-          <div class="cart-header">
-            <h3>Current Order</h3>
-            <button class="close-cart-btn" (click)="isCartOpen.set(false)">✖ Close</button>
-            <button (click)="clearCart()" class="clear-btn">Clear Cart</button>
-          </div>
-
-          <!-- Cart Items Scroll Area -->
-          <div class="cart-items">
-            @for (item of cart(); track item._id) {
-              <div class="cart-item-row">
-                <div class="item-info">
-                  <span class="item-name bold">{{ item.item_name }}</span>
-                  <span class="item-price-unit">Rs {{ item.selling_price }}</span>
-                </div>
-                <div class="item-actions">
-                  <button (click)="decrementQty(item)" class="qty-btn">-</button>
-                  <span class="qty-count">{{ item.quantity }}</span>
-                  <button (click)="addToCart(item)" class="qty-btn">+</button>
-                  <button (click)="removeFromCart(item)" class="delete-btn">🗑️</button>
-                </div>
-              </div>
-            } @empty {
-              <div class="cart-empty-state">
-                <span class="cart-icon">🛒</span>
-                <p>Cart is empty. Click dishes to add them!</p>
-              </div>
-            }
-          </div>
-
-          <!-- Invoice Details / Customer Inputs -->
-          <div class="cart-meta glass-panel">
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label class="form-label">Table Number</label>
-                <input type="text" [(ngModel)]="tableNumber" class="input-control font-sm" placeholder="e.g. Table 5" />
-              </div>
-              <div class="form-group flex-1">
-                <label class="form-label">Discount (Rs)</label>
-                <input type="number" [(ngModel)]="discount" class="input-control font-sm" placeholder="0" min="0" />
-              </div>
-            </div>
-            
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label class="form-label">Customer Name</label>
-                <input type="text" [(ngModel)]="customerName" class="input-control font-sm" placeholder="Guest" />
-              </div>
-              <div class="form-group flex-1">
-                <label class="form-label">Mobile Number</label>
-                <input type="text" [(ngModel)]="customerMobile" class="input-control font-sm" placeholder="Optional" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label class="form-label">Payment Mode</label>
-                <select [(ngModel)]="paymentMode" class="input-control font-sm">
-                  <option value="upi">UPI / Scanner</option>
-                  <option value="cash">Cash</option>
-                  <option value="card">Card</option>
-                  <option value="unpaid">Unpaid</option>
-                </select>
-              </div>
-              <div class="form-group flex-1">
-                <label class="form-label">Status</label>
-                <select [(ngModel)]="status" class="input-control font-sm">
-                  <option value="paid">Paid ✅</option>
-                  <option value="pending">Pending ⏳</option>
-                  <option value="cancelled">Cancelled ❌</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Total Calculation Details Panel -->
-          <div class="cart-summary">
-            <div class="summary-row">
-              <span>Subtotal:</span>
-              <span>Rs {{ calculatedSubTotal() }}</span>
-            </div>
-            @if (calculatedGst() > 0) {
-              <div class="summary-row font-sm text-muted">
-                <span>CGST (2.5%):</span>
-                <span>Rs {{ calculatedCgst() }}</span>
-              </div>
-              <div class="summary-row font-sm text-muted">
-                <span>SGST (2.5%):</span>
-                <span>Rs {{ calculatedSgst() }}</span>
-              </div>
-              <div class="summary-row">
-                <span>Total GST (5%):</span>
-                <span>Rs {{ calculatedGst() }}</span>
-              </div>
-            }
-            @if (discount > 0) {
-              <div class="summary-row text-danger">
-                <span>Discount:</span>
-                <span>-Rs {{ discount }}</span>
-              </div>
-            }
-            <div class="summary-row grand-total bold text-cyan">
-              <span>Grand Total:</span>
-              <span>Rs {{ calculatedGrandTotal() }}</span>
-            </div>
-
-            <button 
-              (click)="handlePlaceOrder()" 
-              class="btn btn-primary place-order-btn" 
-              [disabled]="cart().length === 0 || !tableNumber || isLoading()"
-            >
-              {{ isLoading() ? 'Generating Bill...' : '⚡ Generate & Print Bill' }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Floating Cart Bar for Mobile View -->
-        <div (click)="isCartOpen.set(true)" class="mobile-cart-bar">
-          <div class="mobile-cart-left">
-            <span>🛒 {{ cartItemCount() }} items</span>
-            <span class="divider-dot"></span>
-            <span class="bold">Rs {{ calculatedGrandTotal() }}</span>
-          </div>
-          <span class="bold">View Cart ➡️</span>
-        </div>
-      </div>
-
-      <!-- Receipt Print Modal -->
-      @if (activeBillReceipt()) {
-        <div class="modal-backdrop">
-          <div class="glass-panel modal-content">
-            <div class="modal-header">
-              <h3>Bill Invoice Print</h3>
-              <button (click)="closeModal()" class="close-btn">✖</button>
-            </div>
-            
-            <!-- Dual Receipt Preview (Thermal text & HTML) -->
-            <div class="receipt-tabs">
-              <button (click)="previewMode.set('html')" class="preview-tab" [class.active]="previewMode() === 'html'">HTML Receipt</button>
-              <button (click)="previewMode.set('text')" class="preview-tab" [class.active]="previewMode() === 'text'">58mm POS Receipt (Thermal)</button>
-            </div>
-
-            <div class="receipt-preview-container">
-              @if (previewMode() === 'text') {
-                <pre class="text-receipt-preview">{{ activeBillReceipt().rawText }}</pre>
-              } @else {
-                <div class="html-receipt-preview-wrapper">
-                  <iframe 
-                    #receiptFrame 
-                    [srcdoc]="activeBillReceipt().htmlReceipt" 
-                    class="html-receipt-iframe"
-                  ></iframe>
-                </div>
-              }
-            </div>
-
-            <div class="modal-footer">
-              <button (click)="triggerPrint()" class="btn btn-success flex-1">🖨️ Direct Print</button>
-              <button (click)="closeModal()" class="btn btn-secondary">Done</button>
-            </div>
-          </div>
-        </div>
-      }
-
-      <!-- Toast Alert -->
-      @if (toastMessage()) {
-        <div class="alert-toast" [class.alert-toast-success]="toastType() === 'success'" [class.alert-toast-danger]="toastType() === 'danger'">
-          <span>{{ toastMessage() }}</span>
-        </div>
-      }
-    </app-layout>
-  `,
-  styles: [`
-    .pos-layout {
-      display: grid;
-      grid-template-columns: 1.8fr 1.2fr;
-      gap: 30px;
-      height: calc(100vh - 100px);
-      align-items: stretch;
-    }
-    .menu-section {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-    .pos-header {
-      margin-bottom: 24px;
-    }
-    .title-search {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      gap: 20px;
-    }
-    .title-search h2 {
-      font-size: 24px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
-    .search-bar {
-      max-width: 320px;
-    }
-    .category-tabs {
-      display: flex;
-      gap: 10px;
-      overflow-x: auto;
-      padding-bottom: 8px;
-    }
-    .tab-btn {
-      padding: 10px 20px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--glass-border);
-      color: var(--color-text-muted);
-      border-radius: 30px;
-      cursor: pointer;
-      font-weight: 500;
-      font-size: 13px;
-      white-space: nowrap;
-      transition: var(--transition-smooth);
-    }
-    .tab-btn:hover {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--color-text-main);
-    }
-    .tab-btn.active {
-      background: var(--color-primary);
-      color: var(--color-text-dark);
-      box-shadow: var(--shadow-neon);
-      border-color: var(--color-primary);
-    }
-    .items-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 20px;
-      overflow-y: auto;
-      flex: 1;
-      padding-right: 5px;
-    }
-    .item-card {
-      padding: 18px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      transition: var(--transition-smooth);
-    }
-    .item-card:hover {
-      transform: translateY(-4px);
-      background: var(--surface-hover);
-    }
-    .veg-border {
-      border-left: 4px solid var(--color-success);
-    }
-    .nonveg-border {
-      border-left: 4px solid var(--color-danger);
-    }
-    .item-type-badge {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 10px;
-      text-transform: uppercase;
-      font-weight: 600;
-      color: var(--color-text-muted);
-      margin-bottom: 10px;
-    }
-    .type-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-    .veg-dot { background: var(--color-success); }
-    .nonveg-dot { background: var(--color-danger); }
-    
-    .item-title {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: var(--color-text-main);
-    }
-    .item-desc {
-      font-size: 12px;
-      color: var(--color-text-muted);
-      margin-bottom: 16px;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      flex: 1;
-    }
-    .item-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .item-price {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--color-primary);
-    }
-    .add-btn {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--glass-border);
-      color: var(--color-primary);
-      font-size: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: var(--transition-smooth);
-    }
-    .item-card:hover .add-btn {
-      background: var(--color-primary);
-      color: var(--color-text-dark);
-      border-color: var(--color-primary);
-    }
-
-    /* Cart Section styles */
-    .cart-section {
-      background: rgba(11, 14, 20, 0.6);
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--glass-border);
-      border-radius: 16px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-    .cart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-    .close-cart-btn {
-      display: none;
-    }
-    .clear-btn {
-      font-size: 12px;
-      background: transparent;
-      border: none;
-      color: var(--color-danger);
-      cursor: pointer;
-      font-weight: 500;
-    }
-    .cart-items {
-      flex: 1;
-      overflow-y: auto;
-      margin-bottom: 20px;
-      padding-right: 5px;
-    }
-    .cart-item-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    }
-    .item-info {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-    }
-    .item-price-unit {
-      font-size: 12px;
-      color: var(--color-text-muted);
-      margin-top: 2px;
-    }
-    .item-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .qty-btn {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid var(--glass-border);
-      color: var(--color-text-main);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-    .qty-btn:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
-    .qty-count {
-      font-size: 14px;
-      font-weight: 600;
-      min-width: 20px;
-      text-align: center;
-    }
-    .delete-btn {
-      background: transparent;
-      border: none;
-      font-size: 16px;
-      cursor: pointer;
-      margin-left: 6px;
-      opacity: 0.7;
-      transition: var(--transition-smooth);
-    }
-    .delete-btn:hover {
-      opacity: 1;
-      transform: scale(1.1);
-    }
-    .cart-empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 200px;
-      color: var(--color-text-muted);
-      gap: 10px;
-    }
-    .cart-icon {
-      font-size: 40px;
-      opacity: 0.3;
-    }
-
-    .cart-meta {
-      padding: 14px;
-      margin-bottom: 16px;
-      border-radius: 12px;
-    }
-    .form-row {
-      display: flex;
-      gap: 12px;
-    }
-    .flex-1 { flex: 1; }
-    .font-sm {
-      font-size: 12px;
-      padding: 8px 12px;
-      border-radius: 8px;
-    }
-    .font-sm::placeholder {
-      font-size: 11px;
-    }
-
-    .cart-summary {
-      border-top: 1px solid var(--glass-border);
-      padding-top: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 13px;
-    }
-    .font-sm { font-size: 12px; }
-    .text-muted { color: var(--color-text-muted); }
-    .text-danger { color: var(--color-danger); }
-    .grand-total {
-      font-size: 18px;
-      border-top: 1px dashed var(--glass-border);
-      border-bottom: 1px dashed var(--glass-border);
-      padding: 8px 0;
-      margin: 4px 0;
-    }
-    .text-cyan { color: var(--color-primary); }
-    .place-order-btn {
-      width: 100%;
-      margin-top: 10px;
-    }
-
-    .mobile-cart-bar {
-      display: none;
-    }
-
-    /* Modal dialog styling */
-    .modal-backdrop {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(10px);
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .modal-content {
-      width: 100%;
-      max-width: 520px;
-      background: rgba(22, 28, 39, 0.95);
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      max-height: 90vh;
-    }
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    .close-btn {
-      background: transparent;
-      border: none;
-      color: var(--color-text-muted);
-      font-size: 18px;
-      cursor: pointer;
-    }
-    .receipt-tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-    .preview-tab {
-      flex: 1;
-      padding: 10px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--glass-border);
-      color: var(--color-text-muted);
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 600;
-      transition: var(--transition-smooth);
-    }
-    .preview-tab.active {
-      background: rgba(0, 242, 254, 0.1);
-      color: var(--color-primary);
-      border-color: var(--color-primary);
-    }
-    .receipt-preview-container {
-      flex: 1;
-      overflow-y: auto;
-      background: #000;
-      border-radius: 8px;
-      padding: 15px;
-      border: 1px solid var(--glass-border);
-      min-height: 250px;
-      max-height: 400px;
-    }
-    .text-receipt-preview {
-      color: #00FF00; /* Retro matrix neon */
-      font-family: 'Courier New', Courier, monospace;
-      font-size: 12px;
-      white-space: pre-wrap;
-    }
-    .html-receipt-preview-wrapper {
-      height: 350px;
-      background: #fff;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    .html-receipt-iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: #fff;
-    }
-    .modal-footer {
-      display: flex;
-      gap: 12px;
-      margin-top: 20px;
-    }
-
-    /* POS-specific responsive rules */
-    @media (max-width: 992px) {
-      .pos-layout {
-        grid-template-columns: 1.3fr 1.2fr;
-        gap: 15px;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .pos-layout {
-        grid-template-columns: 1fr;
-        height: calc(100vh - 120px);
-      }
-      .title-search {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-      }
-      .search-bar {
-        max-width: 100%;
-      }
-      
-      /* Mobile Cart Sheet Mechanism */
-      .cart-section {
-        position: fixed;
-        top: 0;
-        right: -100%;
-        width: 100%;
-        max-width: 400px;
-        height: 100vh;
-        z-index: 500;
-        border-radius: 0;
-        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
-        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      .cart-section.mobile-open {
-        right: 0;
-      }
-      .close-cart-btn {
-        display: block;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid var(--glass-border);
-        color: var(--color-text-main);
-        padding: 6px 12px;
-        font-size: 11px;
-        border-radius: 6px;
-        cursor: pointer;
-      }
-      .mobile-cart-bar {
-        position: fixed;
-        bottom: 20px;
-        left: 20px;
-        right: 20px;
-        height: 60px;
-        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-        border-radius: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 24px;
-        color: var(--color-text-dark);
-        z-index: 400;
-        cursor: pointer;
-        box-shadow: var(--shadow-neon-glow);
-        font-size: 14px;
-        animation: pulse 2s infinite;
-      }
-      .divider-dot {
-        width: 4px;
-        height: 4px;
-        border-radius: 50%;
-        background: var(--color-text-dark);
-        display: inline-block;
-        margin: 0 10px;
-      }
-      .mobile-cart-left {
-        display: flex;
-        align-items: center;
-      }
-    }
-
-    @keyframes pulse {
-      0% {
-        box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.7);
-      }
-      70% {
-        box-shadow: 0 0 0 15px rgba(0, 242, 254, 0);
-      }
-      100% {
-        box-shadow: 0 0 0 0 rgba(0, 242, 254, 0);
-      }
-    }
-  `]
+  templateUrl: './billing.html',
+  styleUrls: ['./billing.css']
 })
 export class BillingComponent implements OnInit {
   searchQuery = '';
@@ -760,6 +47,8 @@ export class BillingComponent implements OnInit {
   readonly categories = signal<any[]>([]);
   readonly menuItems = signal<any[]>([]);
   readonly cart = signal<CartItem[]>([]);
+  readonly pendingBills = signal<PendingBill[]>([]);
+  readonly editingBillId = signal<string | null>(null);
   readonly isCartOpen = signal(false);
   readonly isLoading = signal(false);
   
@@ -768,6 +57,8 @@ export class BillingComponent implements OnInit {
 
   readonly toastMessage = signal<string | null>(null);
   readonly toastType = signal<'success' | 'danger'>('success');
+  readonly pendingBillCount = computed(() => this.pendingBills().length);
+  readonly isEditingSavedBill = computed(() => !!this.editingBillId());
 
   // Computed Properties for real-time reactive billing calculations
   readonly cartItemCount = computed(() => {
@@ -842,7 +133,31 @@ export class BillingComponent implements OnInit {
   constructor(private api: ApiService) {}
 
   ngOnInit(): void {
+    this.loadSavedPendingBills();
     this.loadPOSData();
+  }
+
+  loadSavedPendingBills() {
+    try {
+      const saved = localStorage.getItem('sfr_pending_bills');
+      if (saved) {
+        const bills = JSON.parse(saved) as PendingBill[];
+        this.pendingBills.set(Array.isArray(bills) ? bills : []);
+      }
+    } catch {
+      this.pendingBills.set([]);
+    }
+  }
+
+  persistPendingBills() {
+    localStorage.setItem('sfr_pending_bills', JSON.stringify(this.pendingBills()));
+  }
+
+  generatePendingBillId() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    return `pending-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   }
 
   async loadPOSData() {
@@ -937,6 +252,11 @@ export class BillingComponent implements OnInit {
       const billId = response.data._id;
       const receiptData = await this.api.getPrintableBill(billId);
       
+      if (this.editingBillId()) {
+        this.pendingBills.set(this.pendingBills().filter(bill => bill.id !== this.editingBillId()));
+        this.persistPendingBills();
+      }
+
       // Clear inputs
       this.clearCart();
       this.tableNumber = '';
@@ -962,6 +282,124 @@ export class BillingComponent implements OnInit {
       iframe.contentWindow.print();
     } else {
       window.print();
+    }
+  }
+
+  async saveCurrentBill() {
+    if (this.cart().length === 0) {
+      this.showToast('Add items to cart before saving.', 'danger');
+      return;
+    }
+
+    const draftBill: PendingBill = {
+      id: this.editingBillId() || this.generatePendingBillId(),
+      tableNumber: this.tableNumber,
+      discount: this.discount || 0,
+      customerName: this.customerName,
+      customerMobile: this.customerMobile,
+      paymentMode: this.paymentMode,
+      status: this.status,
+      items: [...this.cart()],
+      createdAt: this.editingBillId() ? this.pendingBills().find(b => b.id === this.editingBillId())?.createdAt || new Date().toISOString() : new Date().toISOString()
+    };
+
+    if (this.editingBillId()) {
+      this.pendingBills.set(this.pendingBills().map(bill => bill.id === this.editingBillId() ? draftBill : bill));
+      this.showToast('Saved bill updated successfully.', 'success');
+    } else {
+      this.pendingBills.set([...this.pendingBills(), draftBill]);
+      this.showToast('Bill saved to cart. You can create another bill now.', 'success');
+    }
+
+    this.persistPendingBills();
+    this.clearCurrentBill();
+  }
+
+  clearCurrentBill() {
+    this.cart.set([]);
+    this.tableNumber = '';
+    this.discount = 0;
+    this.customerName = '';
+    this.customerMobile = '';
+    this.paymentMode = 'upi';
+    this.status = 'paid';
+    this.editingBillId.set(null);
+    this.isCartOpen.set(false);
+  }
+
+  loadPendingBill(bill: PendingBill) {
+    this.cart.set([...bill.items]);
+    this.tableNumber = bill.tableNumber;
+    this.discount = bill.discount;
+    this.customerName = bill.customerName;
+    this.customerMobile = bill.customerMobile;
+    this.paymentMode = bill.paymentMode;
+    this.status = bill.status;
+    this.editingBillId.set(bill.id);
+    this.isCartOpen.set(true);
+    this.showToast('Loaded saved bill. You can now edit items in the cart.', 'success');
+  }
+
+  cancelPendingBillEdit() {
+    if (!this.editingBillId()) return;
+    this.clearCurrentBill();
+    this.showToast('Edit canceled. Current cart cleared.', 'danger');
+  }
+
+  removePendingBill(billId: string) {
+    this.pendingBills.set(this.pendingBills().filter(bill => bill.id !== billId));
+    this.persistPendingBills();
+    this.showToast('Saved bill removed from cart.', 'success');
+  }
+
+  getPendingBillTotal(bill: PendingBill) {
+    return bill.items.reduce((sum, item) => sum + item.selling_price * item.quantity, 0);
+  }
+
+  formatPendingBillDate(value: string) {
+    try {
+      return new Date(value).toLocaleString();
+    } catch {
+      return value;
+    }
+  }
+
+  async generateSavedBill(bill: PendingBill) {
+    if (bill.items.length === 0) {
+      this.showToast('Saved bill is empty.', 'danger');
+      return;
+    }
+
+    this.isLoading.set(true);
+    try {
+      const orderItems = bill.items.map(item => ({
+        menuItemId: item._id,
+        quantity: item.quantity
+      }));
+
+      const payload = {
+        tableNumber: bill.tableNumber,
+        customerName: bill.customerName || 'Guest',
+        customerMobile: bill.customerMobile || '',
+        items: orderItems,
+        discount: bill.discount || 0,
+        paymentMode: bill.paymentMode,
+        status: bill.status
+      };
+
+      const response = await this.api.createBill(payload);
+      const billId = response.data._id;
+      const receiptData = await this.api.getPrintableBill(billId);
+
+      this.pendingBills.set(this.pendingBills().filter(saved => saved.id !== bill.id));
+      this.persistPendingBills();
+      this.activeBillReceipt.set(receiptData);
+      this.editingBillId.set(null);
+      this.showToast('Generated bill and removed it from saved cart.', 'success');
+    } catch (e: any) {
+      this.showToast(e?.message || 'Failed to generate saved bill', 'danger');
+    } finally {
+      this.isLoading.set(false);
     }
   }
 

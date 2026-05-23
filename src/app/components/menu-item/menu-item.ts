@@ -1,4 +1,5 @@
 import { Component, signal, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { LayoutComponent } from '../layout/layout';
@@ -6,301 +7,9 @@ import { LayoutComponent } from '../layout/layout';
 @Component({
   selector: 'app-menu-item',
   standalone: true,
-  imports: [FormsModule, LayoutComponent],
-  template: `
-    <app-layout>
-      <div class="page-header">
-        <h1>Restaurant Menu Items</h1>
-        <p>Manage recipes, dishes, beverages, their pricing, and tax structures</p>
-      </div>
-
-      <div class="grid-container">
-        <!-- Add Menu Item Form -->
-        <div class="glass-panel form-card">
-          <h3>Create Menu Item</h3>
-          
-          <form (submit)="handleAddMenuItem($event)">
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label class="form-label">Category</label>
-                <select name="category" [(ngModel)]="category" class="input-control" required>
-                  <option value="" disabled selected>Select Category</option>
-                  @for (cat of categories(); track cat._id) {
-                    <option [value]="cat._id">{{ cat.cate_name }}</option>
-                  }
-                </select>
-              </div>
-
-              <div class="form-group flex-1">
-                <label class="form-label">Item Type</label>
-                <select name="itemType" [(ngModel)]="itemType" class="input-control">
-                  <option value="veg">Veg 🌱</option>
-                  <option value="non-veg">Non-Veg 🍗</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Item Name</label>
-              <input 
-                type="text" 
-                name="item_name" 
-                [(ngModel)]="item_name" 
-                class="input-control" 
-                placeholder="e.g. Masala Dosa, Butter Chicken" 
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Description (Optional)</label>
-              <input 
-                type="text" 
-                name="description" 
-                [(ngModel)]="description" 
-                class="input-control" 
-                placeholder="Briefly describe the item details..." 
-              />
-            </div>
-
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label class="form-label">Selling Price (Rs)</label>
-                <input 
-                  type="number" 
-                  name="selling_price" 
-                  [(ngModel)]="selling_price" 
-                  class="input-control" 
-                  placeholder="e.g. 180" 
-                  required
-                />
-              </div>
-
-              <div class="form-group flex-1">
-                <label class="form-label">MRP (Rs)</label>
-                <input 
-                  type="number" 
-                  name="mrp" 
-                  [(ngModel)]="mrp" 
-                  class="input-control" 
-                  placeholder="e.g. 200" 
-                  required
-                />
-              </div>
-            </div>
-
-            <div class="form-row align-center">
-              <div class="form-group flex-1">
-                <label class="form-label">GST Tax Category</label>
-                <select name="gstRate" [(ngModel)]="gstRate" class="input-control">
-                  <option value="" selected>Default (Direct 5%)</option>
-                  @for (rate of gstRates(); track rate._id) {
-                    <option [value]="rate._id">{{ rate.gstName }} ({{ rate.percentage }}%)</option>
-                  }
-                </select>
-              </div>
-
-              <div class="form-group flex-1 checkbox-group">
-                <label class="checkbox-container">
-                  <input type="checkbox" name="isGSTincluded" [(ngModel)]="isGSTincluded" />
-                  <span class="checkbox-text">GST Included in Price</span>
-                </label>
-              </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary w-full" [disabled]="isLoading()">
-              {{ isLoading() ? 'Saving...' : 'Add Menu Item' }}
-            </button>
-          </form>
-        </div>
-
-        <!-- Menu Items List -->
-        <div class="glass-panel list-card">
-          <h3>Menu Directory</h3>
-          
-          <div class="table-container mt-20">
-            <table class="custom-table">
-              <thead>
-                <tr>
-                  <th>Dish / Drink</th>
-                  <th>Category</th>
-                  <th>Type</th>
-                  <th>Selling Price</th>
-                  <th>MRP</th>
-                  <th>Tax Mode</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of menuItems(); track item._id) {
-                  <tr>
-                    <td>
-                      <div class="item-cell">
-                        <span class="bold">{{ item.item_name }}</span>
-                        <span class="item-sub">{{ item.description || 'No desc' }}</span>
-                      </div>
-                    </td>
-                    <td>{{ item.category?.cate_name || 'Unassigned' }}</td>
-                    <td>
-                      <span class="badge" [class.badge-veg]="item.itemType === 'veg'" [class.badge-nonveg]="item.itemType !== 'veg'">
-                        {{ item.itemType === 'veg' ? 'Veg' : 'Non-Veg' }}
-                      </span>
-                    </td>
-                    <td class="bold text-cyan">Rs {{ item.selling_price }}</td>
-                    <td class="text-muted text-through">Rs {{ item.mrp }}</td>
-                    <td>
-                      <span class="tax-badge" [class.tax-inc]="item.isGSTincluded !== false" [class.tax-exc]="item.isGSTincluded === false">
-                        {{ item.isGSTincluded !== false ? 'GST Inc' : 'GST Ext' }}
-                      </span>
-                    </td>
-                  </tr>
-                } @empty {
-                  <tr>
-                    <td colspan="6" class="center-text py-20 text-muted">No menu items configured yet.</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Toast Alert -->
-      @if (toastMessage()) {
-        <div class="alert-toast" [class.alert-toast-success]="toastType() === 'success'" [class.alert-toast-danger]="toastType() === 'danger'">
-          <span>{{ toastMessage() }}</span>
-        </div>
-      }
-    </app-layout>
-  `,
-  styles: [`
-    .page-header {
-      margin-bottom: 30px;
-    }
-    .page-header h1 {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      margin-bottom: 6px;
-    }
-    .page-header p {
-      color: var(--color-text-muted);
-      font-size: 14px;
-    }
-    .grid-container {
-      display: grid;
-      grid-template-columns: 1fr 1.8fr;
-      gap: 30px;
-      align-items: start;
-    }
-    .form-card, .list-card {
-      padding: 24px;
-    }
-    h3 {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 20px;
-      letter-spacing: 0.5px;
-    }
-    .form-row {
-      display: flex;
-      gap: 20px;
-    }
-    .flex-1 {
-      flex: 1;
-    }
-    .align-center {
-      align-items: center;
-    }
-    .checkbox-group {
-      display: flex;
-      align-items: center;
-      padding-top: 15px;
-    }
-    .checkbox-container {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      font-size: 13px;
-      user-select: none;
-      color: var(--color-text-muted);
-    }
-    .checkbox-container input {
-      accent-color: var(--color-primary);
-      width: 16px;
-      height: 16px;
-    }
-    .checkbox-text {
-      font-weight: 500;
-    }
-    .w-full {
-      width: 100%;
-      margin-top: 10px;
-    }
-    .mt-20 {
-      margin-top: 20px;
-    }
-    .py-20 {
-      padding: 20px 0;
-    }
-    .center-text {
-      text-align: center;
-    }
-    .text-muted {
-      color: var(--color-text-muted);
-    }
-    .text-through {
-      text-decoration: line-through;
-      font-size: 13px;
-    }
-    .bold {
-      font-weight: 600;
-    }
-    .text-cyan {
-      color: var(--color-primary);
-    }
-    .item-cell {
-      display: flex;
-      flex-direction: column;
-    }
-    .item-sub {
-      font-size: 11px;
-      color: var(--color-text-muted);
-      margin-top: 2px;
-    }
-    .tax-badge {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 3px 8px;
-      border-radius: 4px;
-    }
-    .tax-inc {
-      background: rgba(0, 242, 254, 0.1);
-      color: var(--color-primary);
-      border: 1px solid rgba(0, 242, 254, 0.2);
-    }
-    .tax-exc {
-      background: rgba(245, 158, 11, 0.1);
-      color: var(--color-warning);
-      border: 1px solid rgba(245, 158, 11, 0.2);
-    }
-
-    @media (max-width: 1200px) {
-      .grid-container {
-        grid-template-columns: 1fr;
-      }
-    }
-    @media (max-width: 576px) {
-      .form-row {
-        flex-direction: column;
-        gap: 0;
-      }
-      .checkbox-group {
-        padding-top: 0;
-        margin-bottom: 20px;
-      }
-    }
-  `]
+  imports: [CommonModule, FormsModule, LayoutComponent],
+  templateUrl: './menu-item.html',
+  styleUrls: ['./menu-item.css']
 })
 export class MenuItemComponent implements OnInit {
   category = '';
@@ -316,9 +25,18 @@ export class MenuItemComponent implements OnInit {
   readonly gstRates = signal<any[]>([]);
   readonly menuItems = signal<any[]>([]);
   readonly isLoading = signal(false);
+  readonly editingId = signal<string | null>(null);
 
   readonly toastMessage = signal<string | null>(null);
   readonly toastType = signal<'success' | 'danger'>('success');
+
+  // Bulk upload signals
+  readonly uploadMode = signal<'single' | 'bulk'>('single');
+  readonly csvParsedItems = signal<any[]>([]);
+  readonly csvErrors = signal<any[]>([]);
+  readonly isBulkUploading = signal(false);
+  readonly bulkUploadProgress = signal(0);
+  readonly showBulkErrors = signal(false);
 
   constructor(private api: ApiService) {}
 
@@ -361,8 +79,17 @@ export class MenuItemComponent implements OnInit {
         payload.gstRate = this.gstRate;
       }
 
-      await this.api.addMenuItem(payload);
-      this.showToast('Menu item added successfully', 'success');
+      const id = this.editingId();
+      if (id) {
+        // Update existing item
+        await this.api.updateMenuItem(id, payload);
+        this.showToast('Menu item updated successfully', 'success');
+        this.editingId.set(null);
+      } else {
+        // Add new item
+        await this.api.addMenuItem(payload);
+        this.showToast('Menu item added successfully', 'success');
+      }
       
       // Reset fields
       this.item_name = '';
@@ -370,12 +97,55 @@ export class MenuItemComponent implements OnInit {
       this.selling_price = undefined;
       this.mrp = undefined;
       this.isGSTincluded = true;
+      this.category = '';
+      this.gstRate = '';
       
       // Reload list
       const items = await this.api.getMenuItems();
       this.menuItems.set(items);
     } catch (e: any) {
       this.showToast(e.message || 'Failed to save menu item', 'danger');
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  startEditMenuItem(item: any) {
+    this.editingId.set(item._id);
+    this.category = item.category?._id || '';
+    this.itemType = item.itemType || 'veg';
+    this.item_name = item.item_name;
+    this.description = item.description || '';
+    this.selling_price = item.selling_price;
+    this.mrp = item.mrp;
+    this.gstRate = item.gstRate || '';
+    this.isGSTincluded = item.isGSTincluded !== false;
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelEditMenuItem() {
+    this.editingId.set(null);
+    this.item_name = '';
+    this.description = '';
+    this.selling_price = undefined;
+    this.mrp = undefined;
+    this.category = '';
+    this.gstRate = '';
+    this.isGSTincluded = true;
+  }
+
+  async handleDeleteMenuItem(menuItemId: string, itemName: string) {
+    if (!confirm(`Are you sure you want to delete "${itemName}"?`)) return;
+
+    this.isLoading.set(true);
+    try {
+      await this.api.deleteMenuItem(menuItemId);
+      this.showToast('Menu item deleted successfully', 'success');
+      const items = await this.api.getMenuItems();
+      this.menuItems.set(items);
+    } catch (e: any) {
+      this.showToast(e.message || 'Failed to delete menu item', 'danger');
     } finally {
       this.isLoading.set(false);
     }
@@ -388,4 +158,215 @@ export class MenuItemComponent implements OnInit {
       this.toastMessage.set(null);
     }, 3000);
   }
+
+  // ================= BULK UPLOAD METHODS =================
+  
+  /**
+   * Parse CSV file and extract menu items
+   * Expected CSV columns: item_name, category, itemType, description, selling_price, mrp, gstRate, isGSTincluded
+   */
+  parseCsvFile(file: File): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (event: any) => {
+        try {
+          const csv = event.target.result;
+          const lines = csv.split('\n').filter((line: string) => line.trim());
+          
+          if (lines.length < 2) {
+            reject({ message: 'CSV file is empty or has only headers' });
+            return;
+          }
+
+          // Parse headers
+          const headers = lines[0].split(',').map((h: string) => h.trim().toLowerCase());
+          const requiredHeaders = ['item_name', 'category', 'itemtype', 'selling_price', 'mrp'];
+          const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+
+          if (missingHeaders.length > 0) {
+            reject({ message: `Missing required columns: ${missingHeaders.join(', ')}` });
+            return;
+          }
+
+          // Parse rows
+          const items: any[] = [];
+          const errors: any[] = [];
+
+          for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].split(',').map((v: string) => v.trim());
+            
+            if (values.join('').length === 0) continue; // Skip empty rows
+
+            const rowObj: any = {};
+            headers.forEach((header:any, index: number) => {
+              rowObj[header] = values[index] || '';
+            });
+
+            // Validate row data
+            const rowErrors: string[] = [];
+
+            if (!rowObj['item_name']) rowErrors.push('item_name is required');
+            if (!rowObj['category']) rowErrors.push('category is required');
+            if (!rowObj['selling_price'] || isNaN(parseFloat(rowObj['selling_price']))) rowErrors.push('selling_price must be a valid number');
+            if (!rowObj['mrp'] || isNaN(parseFloat(rowObj['mrp']))) rowErrors.push('mrp must be a valid number');
+
+            if (rowErrors.length > 0) {
+              errors.push({ row: i + 1, item: rowObj['item_name'] || 'Unknown', errors: rowErrors });
+              continue;
+            }
+
+            // Map GST rate if provided
+            let gstRateId = '';
+            if (rowObj['gstrate']) {
+              const gstMatch = this.gstRates().find(g => 
+                g.gstName.toLowerCase() === rowObj['gstrate'].toLowerCase() ||
+                g.percentage === parseFloat(rowObj['gstrate'])
+              );
+              if (gstMatch) {
+                gstRateId = gstMatch._id;
+              }
+            }
+
+            // Create item object
+            const item = {
+              item_name: rowObj['item_name'],
+              category: rowObj['category'],
+              itemType: (rowObj['itemtype'] || 'veg').toLowerCase(),
+              description: rowObj['description'] || '',
+              selling_price: parseFloat(rowObj['selling_price']),
+              mrp: parseFloat(rowObj['mrp']),
+              gstRate: gstRateId,
+              isGSTincluded: rowObj['isgstincluded'] ? rowObj['isgstincluded'].toLowerCase() === 'true' : true
+            };
+
+            items.push(item);
+          }
+
+          if (errors.length > 0) {
+            this.csvErrors.set(errors);
+          }
+
+          resolve(items);
+        } catch (error: any) {
+          reject({ message: `Error parsing CSV: ${error.message}` });
+        }
+      };
+
+      reader.onerror = () => {
+        reject({ message: 'Failed to read file' });
+      };
+
+      reader.readAsText(file);
+    });
+  }
+
+  /**
+   * Map category names/IDs in parsed items to actual category IDs
+   */
+  mapCategoriesToIds(items: any[]): any[] {
+    return items.map(item => {
+      let categoryId = item.category;
+      
+      // If category is a string name, find the matching ID
+      if (typeof item.category === 'string' && !categoryId.startsWith('_')) {
+        const catMatch = this.categories().find(c => 
+          c.cate_name.toLowerCase() === item.category.toLowerCase()
+        );
+        if (catMatch) {
+          categoryId = catMatch._id;
+        }
+      }
+      
+      return { ...item, category: categoryId };
+    });
+  }
+
+  async handleCsvFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    
+    // Validate file type
+    if (!file.name.endsWith('.csv')) {
+      this.showToast('Please select a valid CSV file', 'danger');
+      return;
+    }
+
+    try {
+      this.csvParsedItems.set([]);
+      this.csvErrors.set([]);
+      this.showBulkErrors.set(false);
+
+      const parsedItems = await this.parseCsvFile(file);
+      const mappedItems = this.mapCategoriesToIds(parsedItems);
+
+      if (mappedItems.length === 0) {
+        this.showToast('No valid items found in CSV file', 'danger');
+        return;
+      }
+
+      this.csvParsedItems.set(mappedItems);
+      this.showToast(`Parsed ${mappedItems.length} menu items from CSV (click "Upload" to confirm)`, 'success');
+    } catch (error: any) {
+      this.showToast(error.message || 'Failed to parse CSV file', 'danger');
+    } finally {
+      // Clear file input
+      input.value = '';
+    }
+  }
+
+  async handleBulkUpload() {
+    const items = this.csvParsedItems();
+    if (items.length === 0) {
+      this.showToast('No items to upload', 'danger');
+      return;
+    }
+
+    this.isBulkUploading.set(true);
+    this.bulkUploadProgress.set(0);
+
+    try {
+      await this.api.addMenuItemsBulk(items);
+      this.showToast(`Successfully uploaded ${items.length} menu items!`, 'success');
+      
+      // Reset upload state
+      this.csvParsedItems.set([]);
+      this.csvErrors.set([]);
+      this.showBulkErrors.set(false);
+      this.uploadMode.set('single');
+      
+      // Reload menu items list
+      const updatedItems = await this.api.getMenuItems();
+      this.menuItems.set(updatedItems);
+    } catch (error: any) {
+      this.showToast(error.message || 'Failed to upload menu items', 'danger');
+    } finally {
+      this.isBulkUploading.set(false);
+    }
+  }
+
+  cancelBulkUpload() {
+    this.csvParsedItems.set([]);
+    this.csvErrors.set([]);
+    this.showBulkErrors.set(false);
+    this.uploadMode.set('single');
+  }
+
+  downloadCsvTemplate() {
+    const template = `item_name,category,itemType,description,selling_price,mrp,gstRate,isGSTincluded
+    Masala Dosa,Breakfast,veg,Crispy dosa with spicy potato filling,180,200,5%,true
+    Butter Chicken,Main Course,non-veg,Tender chicken in creamy tomato sauce,320,380,,true
+    Paneer Tikka,Starters,veg,Grilled paneer with Indian spices,240,280,,true`;
+
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'menu-items-template.csv';
+    link.click();
+    window.URL.revokeObjectURL(url);
+  }
+
 }

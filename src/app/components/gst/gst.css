@@ -1,0 +1,52 @@
+.page-header {
+  margin-bottom: 30px;
+}
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.page-header p {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+.grid-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 30px;
+  align-items: start;
+}
+.form-card, .list-card {
+  padding: 24px;
+}
+h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  letter-spacing: 0.5px;
+}
+.w-full {
+  width: 100%;
+}
+.mt-20 {
+  margin-top: 20px;
+}
+.py-20 {
+  padding: 20px 0;
+}
+.center-text {
+  text-align: center;
+}
+.text-muted {
+  color: var(--color-text-muted);
+}
+.bold {
+  font-weight: 600;
+}
+
+@media (max-width: 992px) {
+  .grid-container {
+    grid-template-columns: 1fr;
+  }
+}

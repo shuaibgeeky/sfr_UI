@@ -1,0 +1,94 @@
+<app-layout>
+  <div class="page-header">
+    <h1>Food Categories</h1>
+    <p>Manage and group food items into breakfast, lunch, dinners, and others</p>
+  </div>
+
+  <div class="grid-container">
+    <!-- Add/Edit Category Form -->
+    <div class="glass-panel form-card">
+      <h3>{{ editingId() ? 'Edit Food Category' : 'Create Food Category' }}</h3>
+      
+      <form (submit)="handleAddCategory($event)">
+        <div class="form-group">
+          <label class="form-label">Category Name</label>
+          <input 
+            type="text" 
+            name="cate_name" 
+            [(ngModel)]="cate_name" 
+            class="input-control" 
+            placeholder="e.g. Breakfast, Lunch, Desserts" 
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description (Optional)</label>
+          <textarea 
+            name="description" 
+            [(ngModel)]="description" 
+            class="input-control" 
+            placeholder="Describe this food category..." 
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <button type="submit" class="btn btn-primary w-full" [disabled]="isLoading()">
+            {{ isLoading() ? (editingId() ? 'Updating...' : 'Creating...') : (editingId() ? 'Update Category' : 'Create Category') }}
+          </button>
+          <button *ngIf="editingId()" type="button" class="btn btn-secondary w-full" (click)="cancelEdit()" [disabled]="isLoading()">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Categories List -->
+    <div class="glass-panel list-card">
+      <h3>Active Food Categories</h3>
+      
+      <div class="table-container mt-20">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Category Name</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let cat of categories()">
+              <td class="bold">{{ cat.cate_name }}</td>
+              <td class="desc-col">{{ cat.description || 'No description' }}</td>
+              <td>
+                <span class="badge" [class.badge-veg]="cat.status" [class.badge-nonveg]="!cat.status">
+                  {{ cat.status ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn btn-sm btn-secondary" (click)="startEdit(cat)" [disabled]="isLoading()">
+                    ✏️ Edit
+                  </button>
+                  <button class="btn btn-sm btn-danger" (click)="handleDeleteCategory(cat._id, cat.cate_name)" [disabled]="isLoading()">
+                    🗑️ Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="categories().length === 0">
+              <td colspan="4" class="center-text py-20 text-muted">No food categories configured yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Alert -->
+  <div *ngIf="toastMessage()" class="alert-toast" [class.alert-toast-success]="toastType() === 'success'" [class.alert-toast-danger]="toastType() === 'danger'">
+    <span>{{ toastMessage() }}</span>
+  </div>
+</app-layout>
