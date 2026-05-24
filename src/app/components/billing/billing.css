@@ -2,14 +2,17 @@
   display: grid;
   grid-template-columns: 1fr 1.3fr;
   gap: 30px;
-  min-height: calc(100vh - 100px);
-  height: auto;
+  height: calc(100vh - 100px);
+  min-height: 0;
+  overflow: hidden;
   align-items: stretch;
 }
 .menu-section {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 .pos-header {
   margin-bottom: 24px;
@@ -45,10 +48,12 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  overflow: hidden;
+  overflow-y: auto;
   flex: 1;
+  min-height: 0;
   align-content: start;
   align-items: start;
+  padding-right: 6px;
 }
 .item-card {
   padding: 12px;
@@ -145,7 +150,18 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  max-height: calc(100vh - 100px);
 }
+.cart-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;      /* ← allow the whole body to scroll */
+  overflow-x: hidden;
+}
+
 .cart-header {
   display: flex;
   justify-content: space-between;
@@ -165,8 +181,11 @@
   font-weight: 500;
 }
 .cart-items {
-  overflow: hidden;
+  flex: 0 0 auto;        /* ← don't grow/shrink, size to content */
+  min-height: 60px;
+  overflow-y: visible;   /* ← let parent handle scroll */
   margin-bottom: 20px;
+  padding-right: 6px;
   order: 3;
 }
 .cart-item-row {
@@ -244,6 +263,7 @@
   margin-bottom: 16px;
   border-radius: 12px;
   order: 2;
+  flex: 0 0 auto;
 }
 .form-row {
   display: flex;
@@ -266,6 +286,7 @@
   flex-direction: column;
   gap: 8px;
   order: 4;
+  flex: 0 0 auto;
 }
 .summary-row {
   display: flex;
@@ -285,6 +306,7 @@
   padding: 16px;
   border-radius: 12px;
   order: 5;
+  flex: 0 0 auto;
 }
 .pending-bill-card {
   padding: 14px;
