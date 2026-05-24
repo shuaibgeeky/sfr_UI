@@ -8,7 +8,8 @@
           <h2>Billing Terminal (POS)</h2>
           <input 
             type="text" 
-            [(ngModel)]="searchQuery" 
+            [ngModel]="searchQuery()" 
+            (ngModelChange)="searchQuery.set($event)"
             class="input-control search-bar" 
             placeholder="🔍 Search dishes, drinks..." 
           />
@@ -17,7 +18,11 @@
         <!-- Category Dropdown -->
         <div class="category-dropdown">
           <label class="form-label">Filter by Category:</label>
-          <select [(ngModel)]="selectedCategory" class="input-control category-select">
+          <select
+            [ngModel]="selectedCategory()"
+            (ngModelChange)="selectedCategory.set($event)"
+            class="input-control category-select"
+          >
             <option value="all">All Items</option>
             @for (cat of categories(); track cat._id) {
               <option [value]="cat._id">{{ cat.cate_name }}</option>
