@@ -14,24 +14,15 @@
           />
         </div>
         
-        <!-- Category Tabs -->
-        <div class="category-tabs">
-          <button 
-            (click)="selectedCategory.set('all')" 
-            class="tab-btn" 
-            [class.active]="selectedCategory() === 'all'"
-          >
-            All Items
-          </button>
-          @for (cat of categories(); track cat._id) {
-            <button 
-              (click)="selectedCategory.set(cat._id)" 
-              class="tab-btn" 
-              [class.active]="selectedCategory() === cat._id"
-            >
-              {{ cat.cate_name }}
-            </button>
-          }
+        <!-- Category Dropdown -->
+        <div class="category-dropdown">
+          <label class="form-label">Filter by Category:</label>
+          <select [(ngModel)]="selectedCategory" class="input-control category-select">
+            <option value="all">All Items</option>
+            @for (cat of categories(); track cat._id) {
+              <option [value]="cat._id">{{ cat.cate_name }}</option>
+            }
+          </select>
         </div>
       </div>
 

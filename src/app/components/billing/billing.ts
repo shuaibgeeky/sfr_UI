@@ -34,7 +34,7 @@ interface PendingBill {
 })
 export class BillingComponent implements OnInit {
   searchQuery = '';
-  selectedCategory = signal<string>('all');
+  selectedCategory = 'all';
   
   tableNumber = '';
   discount = 0;
@@ -116,7 +116,7 @@ export class BillingComponent implements OnInit {
     let list = this.menuItems();
     
     // Filter Category
-    const cat = this.selectedCategory();
+    const cat = this.selectedCategory;
     if (cat !== 'all') {
       list = list.filter(item => item.category?._id === cat);
     }

@@ -1,6 +1,6 @@
 .pos-layout {
   display: grid;
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: 1fr 1.3fr;
   gap: 30px;
   min-height: calc(100vh - 100px);
   height: auto;
@@ -29,41 +29,24 @@
 .search-bar {
   max-width: 320px;
 }
-.category-tabs {
+.category-dropdown {
   display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 8px;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
 }
-.tab-btn {
-  padding: 10px 20px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--glass-border);
-  color: var(--color-text-muted);
-  border-radius: 30px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 13px;
-  white-space: nowrap;
-  transition: var(--transition-smooth);
-}
-.tab-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--color-text-main);
-}
-.tab-btn.active {
-  background: var(--color-primary);
-  color: var(--color-text-dark);
-  box-shadow: var(--shadow-neon);
-  border-color: var(--color-primary);
+.category-select {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  max-width: 100%;
 }
 .items-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  overflow-y: auto;
+  overflow: hidden;
   flex: 1;
-  padding-right: 5px;
   align-content: start;
   align-items: start;
 }
@@ -168,6 +151,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  order: 1;
 }
 .close-cart-btn {
   display: none;
@@ -181,10 +165,9 @@
   font-weight: 500;
 }
 .cart-items {
-  flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
   margin-bottom: 20px;
-  padding-right: 5px;
+  order: 3;
 }
 .cart-item-row {
   display: flex;
@@ -260,6 +243,7 @@
   padding: 14px;
   margin-bottom: 16px;
   border-radius: 12px;
+  order: 2;
 }
 .form-row {
   display: flex;
@@ -281,6 +265,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  order: 4;
 }
 .summary-row {
   display: flex;
@@ -299,6 +284,7 @@
 .pending-bills {
   padding: 16px;
   border-radius: 12px;
+  order: 5;
 }
 .pending-bill-card {
   padding: 14px;
@@ -436,10 +422,19 @@
 }
 
 /* POS-specific responsive rules */
+@media (max-width: 1200px) {
+  .items-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 992px) {
   .pos-layout {
     grid-template-columns: 0.9fr 1.6fr;
     gap: 15px;
+  }
+  .items-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -447,6 +442,9 @@
   .pos-layout {
     grid-template-columns: 1fr;
     height: calc(100vh - 120px);
+  }
+  .items-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
   .title-search {
     flex-direction: column;
